@@ -8,12 +8,19 @@ The `gcalamityjane` script is a tiny script allowing you to check you own Google
 Why not using following alias?
 
 ```bash
-alias gcal='gcal='ruby ..../gcalamityjane/gcalamityjane.rb''
+alias gcal='ruby ..../gcalamityjane/gcalamityjane.rb''
 ```
 
 ***
 
-## Release 1.0.0 - 23/06/2022
+## Releases
 
-* NEW FEATURES:
+### Release 1.0.1 - 23/06/2022
+
+* Bug fixes:
+  * **README:** whoops
+
+### Release 1.0.0 - 23/06/2022
+
+* New features:
   * **gcal:** display today's schedule
