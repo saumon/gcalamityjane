@@ -15,6 +15,11 @@ alias gcal='ruby ..../gcalamityjane/gcalamityjane.rb''
 
 ## Releases
 
+### Release 1.0.3 - 29/06/2022
+
+* New features:
+  * **gcal:** refacto
+
 ### Release 1.0.2 - 25/06/2022
 
 * New features:
