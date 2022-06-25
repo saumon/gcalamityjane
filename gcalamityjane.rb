@@ -1,16 +1,18 @@
+# frozen_string_literal: true
+
 require 'google/apis/calendar_v3'
 require 'googleauth'
 require 'googleauth/stores/file_token_store'
 require 'date'
 require 'fileutils'
 
-OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'.freeze
-APPLICATION_NAME = 'Google Calendar API Ruby Quickstart'.freeze
-CREDENTIALS_PATH = __dir__ + '/conf/credentials.json'.freeze
+OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
+APPLICATION_NAME = 'Google Calendar API Ruby Quickstart'
+CREDENTIALS_PATH = "#{__dir__}/conf/credentials.json".freeze
 # The file token.yaml stores the user's access and refresh tokens, and is
 # created automatically when the authorization flow completes for the first
 # time.
-TOKEN_PATH = __dir__ + '/conf/token.yaml'.freeze
+TOKEN_PATH = "#{__dir__}/conf/token.yaml".freeze
 SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
 
 ##
@@ -37,12 +39,50 @@ def authorize
   credentials
 end
 
-def str_green(str)
-  "\033[32m#{str}\033[0m"
+# For terminal coloration...
+class String
+  def black() = "\e[30m#{self}\e[0m"
+  def red() = "\e[31m#{self}\e[0m"
+  def green() = "\e[32m#{self}\e[0m"
+  def brown() = "\e[33m#{self}\e[0m"
+  def blue() = "\e[34m#{self}\e[0m"
+  def magenta() = "\e[35m#{self}\e[0m"
+  def cyan() = "\e[36m#{self}\e[0m"
+  def gray() = "\e[37m#{self}\e[0m"
+
+  def bg_black() = "\e[40m#{self}\e[0m"
+  def bg_red() = "\e[41m#{self}\e[0m"
+  def bg_green() = "\e[42m#{self}\e[0m"
+  def bg_brown() = "\e[43m#{self}\e[0m"
+  def bg_blue() = "\e[44m#{self}\e[0m"
+  def bg_magenta() = "\e[45m#{self}\e[0m"
+  def bg_cyan() = "\e[46m#{self}\e[0m"
+  def bg_gray() = "\e[47m#{self}\e[0m"
+
+  def bold() = "\e[1m#{self}\e[22m"
+  def italic() = "\e[3m#{self}\e[23m"
+  def underline() = "\e[4m#{self}\e[24m"
+  def blink() = "\e[5m#{self}\e[25m"
+  def reverse_color() = "\e[7m#{self}\e[27m"
 end
 
-def str_red(str)
-  "\033[31m#{str}\033[0m"
+def no_colors
+  gsub(/\e\[\d+m/, '')
+end
+
+# puts "I'm back green".bg_green
+# puts "I'm red and back cyan".red.bg_cyan
+# puts "I'm bold and green and backround red".bold.green.bg_red
+
+def in_event?(event, date_now)
+  event_start = event.start.date || event.start.date_time
+  event_end = event.end.date || event.end.date_time
+  date_now_hm = date_now.hour * 100 + date_now.min
+  event_start_hm = event_start.hour * 100 + event_start.min
+  event_end_hm = event_end.hour * 100 + event_end.min
+
+  date_now.year == event_start.year && date_now.month == event_start.month && date_now.day == event_start.day &&
+    date_now_hm >= event_start_hm && date_now_hm <= event_end_hm
 end
 
 # Initialize the API
@@ -63,10 +103,25 @@ response = service.list_events(calendar_id,
                                time_min: date_min.rfc3339,
                                time_max: date_max.rfc3339)
 
-puts "Now it\'s #{str_red(date_now.strftime('%H:%M'))}, today\'s events:"
+puts "Now it\'s #{date_now.strftime('%H:%M').red}, today\'s events:"
 puts 'No events found' if response.items.empty?
 response.items.each do |event|
-  start = event.start.date || event.start.date_time
-  # puts "- #{event.summary} (#{start})"
-  puts "- #{str_green(start.strftime('%H:%M'))} #{event.summary}"
+  event_start = event.start.date || event.start.date_time
+  event_end = event.end.date || event.end.date_time
+
+  if in_event? event, date_now
+    print '>> '.bold.red
+    print event_start.strftime('%H:%M').bold.red
+    print ' -> '.bold.red
+    print event_end.strftime('%H:%M').bold.red
+    print ' '
+    puts event.summary.bold.red
+  else
+    print ' - '
+    print event_start.strftime('%H:%M').green
+    print ' -> '.green
+    print event_end.strftime('%H:%M').green
+    print ' '
+    puts event.summary
+  end
 end
