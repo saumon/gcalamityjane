@@ -7,19 +7,19 @@ require 'googleauth'
 require 'googleauth/stores/file_token_store'
 require 'date'
 require 'fileutils'
-require 'tools'
+require 'gcalamityjane/tools'
 
 # Google Calendar API Manager
-class GcalApiManager
+class Gcalamityjane
   include Tools
 
   OOB_URI = 'urn:ietf:wg:oauth:2.0:oob'
   APPLICATION_NAME = 'gcalamityjane'
-  CREDENTIALS_PATH = "#{__dir__}/conf/credentials.json".freeze
+  CREDENTIALS_PATH = "#{__dir__}/../conf/credentials.json".freeze
   # The file token.yaml stores the user's access and refresh tokens, and is
   # created automatically when the authorization flow completes for the first
   # time.
-  TOKEN_PATH = "#{__dir__}/conf/token.yaml".freeze
+  TOKEN_PATH = "#{__dir__}/../conf/token.yaml".freeze
   SCOPE = Google::Apis::CalendarV3::AUTH_CALENDAR_READONLY
 
   def initialize
@@ -55,22 +55,52 @@ class GcalApiManager
     credentials
   end
 
+  #TODO: test U ?
   def in_event?(event, date_now)
     event_start = event.start.date || event.start.date_time
     event_end = event.end.date || event.end.date_time
-    date_now_hm = date_now.hour * 100 + date_now.min
-    event_start_hm = event_start.hour * 100 + event_start.min
-    event_end_hm = event_end.hour * 100 + event_end.min
 
-    date_now.year == event_start.year && date_now.month == event_start.month && date_now.day == event_start.day &&
-      date_now_hm >= event_start_hm && date_now_hm <= event_end_hm
+    date_before?(event_start, date_now) && date_before?(date_now, event_end)
   end
 
-  def printTodaysEvents
+  #TODO: test U ?
+  def event_before?(event, date_now)
+    event_end = event.end.date || event.end.date_time
+
+    date_before_strict?(event_end, date_now)
+  end
+
+  def print_all_events
+    print_yesterday_events
+    puts ''
+    print_todays_events
+  end
+
+  def print_yesterday_events
+    date_yesterday = DateTime.now - 1
+    date_min = DateTime.new(date_yesterday.year, date_yesterday.mon, date_yesterday.day, 0, 0)
+    date_max = DateTime.new(date_yesterday.year, date_yesterday.mon, date_yesterday.day, 23, 59)
+
+    print "Yesterday was #{magenta date_yesterday.strftime('%A %e %B %Y, W%W')}"
+    puts ', events:'
+
+    print_events(date_min: date_min, date_max: date_max)
+  end
+
+  def print_todays_events
     # Fetch the events for the user
     date_now = DateTime.now
     date_min = DateTime.new(date_now.year, date_now.mon, date_now.day, 0, 0)
     date_max = DateTime.new(date_now.year, date_now.mon, date_now.day, 23, 59)
+
+    print "Now it\'s #{bold red date_now.strftime('%H:%M')} (#{magenta date_now.strftime('%A %e %B %Y, W%W')})"
+    puts ", today\'s events:"
+
+    print_events(date_min: date_min, date_max: date_max)
+  end
+
+  def print_events(date_min:, date_max:)
+    date_now = DateTime.now
 
     response = @service.list_events(@calendar_id,
                                     single_events: true,
@@ -78,9 +108,8 @@ class GcalApiManager
                                     time_min: date_min.rfc3339,
                                     time_max: date_max.rfc3339)
 
-    print "Now it\'s #{bold red date_now.strftime('%H:%M')} (#{magenta date_now.strftime('%A %e %B %Y, W%W')})"
-    puts ", today\'s events:"
     puts 'No events found' if response.items.empty?
+
     response.items.each do |event|
       event_start = event.start.date || event.start.date_time
       event_end = event.end.date || event.end.date_time
@@ -92,6 +121,13 @@ class GcalApiManager
         print bold red event_end.strftime('%H:%M')
         print ' '
         puts bold red event.summary
+      elsif event_before? event, date_now
+        print ' - '
+        print event_start.strftime('%H:%M')
+        print ' -> '
+        print event_end.strftime('%H:%M')
+        print ' '
+        puts  event.summary
       else
         print ' - '
         print green event_start.strftime('%H:%M')
@@ -101,5 +137,19 @@ class GcalApiManager
         puts event.summary
       end
     end
+  end
+
+  def date_before_strict?(date1, date2)
+    date1 = DateTime.parse(date1) unless date1.is_a?(DateTime)
+    date2 = DateTime.parse(date2) unless date2.is_a?(DateTime)
+
+    date1 < date2
+  end
+
+  def date_before?(date1, date2)
+    date1 = DateTime.parse(date1) unless date1.is_a?(DateTime)
+    date2 = DateTime.parse(date2) unless date2.is_a?(DateTime)
+
+    date1 <= date2
   end
 end
