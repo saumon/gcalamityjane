@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+$LOAD_PATH.unshift "#{File.dirname(__FILE__)}/../lib"
+
+require 'gcalamityjane'
+
+# Gcalamityjane
+class Main
+  def initialize
+    gcalamityjane = Gcalamityjane.new
+    gcalamityjane.print_all_events
+  end
+end
+
+# Go go go!
+Main.new
