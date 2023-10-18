@@ -15,6 +15,11 @@ alias gcal='ruby ..../gcalamityjane/gcalamityjane.rb''
 
 ## Releases
 
+### Release 1.0.4 - 18/10/2023
+
+* New features:
+  * **gcal:** refacto, yesterday events, skeleton update, date compare fixes
+
 ### Release 1.0.3 - 29/06/2022
 
 * New features:
